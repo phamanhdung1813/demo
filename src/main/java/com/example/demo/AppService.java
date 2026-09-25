@@ -1,8 +1,6 @@
 package com.example.demo;
 
-import io.micrometer.tracing.Tracer;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -11,6 +9,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.Optional;
 
@@ -39,11 +38,19 @@ public class AppService {
             AppEntity a = currentEntity.get();
             a.setAmount(a.getAmount() + 100L);
             repository.save(a);
-            self.methodB();
+            try {
+                this.methodB();
+            } catch (Exception e) {
+                log.error("Error in methodA while calling methodB", e);
+                log.info("rollbackOnly={}",
+                        TransactionAspectSupport
+                                .currentTransactionStatus()
+                                .isRollbackOnly());
+            }
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void methodB() {
         var span = tracer.currentSpan();
         log.info("methodB currentSpanId={}", span);
