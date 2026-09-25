@@ -18,6 +18,25 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+management:
+  opentelemetry:
+    tracing:
+      export:
+        enabled: false
+
+  tracing:
+    sampling:
+      probability: 1.0
+
 logging:
+  pattern:
+    correlation: "[traceId=%X{traceId:-},spanId=%X{spanId:-}] "
+    console: "%d %-5level ${LOG_CORRELATION_PATTERN:-} %logger - %msg%n"
+
   level:
+    root: INFO
     org.springframework.transaction: TRACE
+    org.springframework.orm.jpa: TRACE
+    org.springframework.transaction.interceptor: TRACE
+    org.springframework.transaction.support: TRACE
